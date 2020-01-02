@@ -108,3 +108,15 @@ void Maneuver::Turn(char direction, int radius) {
 
 	Stop();
 }
+
+int Maneuver::Distance(Sensor sensor) {
+  digitalWrite(sensor.Trig, LOW);   
+  delayMicroseconds(2);
+  digitalWrite(sensor.Trig, HIGH);  
+  delayMicroseconds(20);
+  digitalWrite(sensor.Trig, LOW);   
+  float Fdistance = pulseIn(sensor.Echo, HIGH);  
+  Fdistance = Fdistance / 58;
+  
+  return (int)Fdistance;
+} 

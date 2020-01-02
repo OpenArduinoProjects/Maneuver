@@ -8,6 +8,11 @@
 #ifndef _Maneuver_h
 #define _Maneuver_h
 
+struct Sensor {
+  int Echo;
+  int Trig;
+};
+
 struct Settings {
 	int DriveA;
 	int DriveB;
@@ -28,6 +33,7 @@ public:
 	void Right();
 	void Stop();
 	void Turn(char direction, int radius);
+	int Distance(Sensor sensor);
 
 private:
 	int _driveA;
