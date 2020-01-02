@@ -26,9 +26,11 @@ struct Settings {
 class Maneuver {
 public:
 	Maneuver();
+	Maneuver(int speed);
+	void SetSpeed(int speed);
 	void Configure(Settings setting);
 	void Forward();
-	void Reverse();
+	void Backward();
 	void Left();
 	void Right();
 	void Stop();
@@ -44,6 +46,7 @@ private:
 	int _motor4;
 	int _speed;
 	bool _debug;
+	bool _isConfigured = false;
 };
 
 #endif

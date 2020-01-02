@@ -8,8 +8,14 @@
 #include "Maneuver.h"
 #include "Arduino.h"
 
+String SPEED_MSG = "Speed not set";
+String CONFIG_MSG = "PIN Configuration not set.";
+
 Maneuver::Maneuver() {
-	_speed = 250;
+}
+
+Maneuver::Maneuver(int speed){
+	SetSpeed(speed);	
 }
 
 void Maneuver::Configure(Settings setting){
@@ -29,66 +35,132 @@ void Maneuver::Configure(Settings setting){
 	pinMode(_motor4, OUTPUT);
 	pinMode(_driveA, OUTPUT);
 	pinMode(_driveB, OUTPUT);
+	
+	_isConfigured = true;
+}
+
+void Maneuver::SetSpeed(int speed){
+	if(speed > 0){
+		_speed = speed;	
+	}else{
+		Serial.println("Speed not set");
+	}
 }
 
 void Maneuver::Forward() {
-	analogWrite(_driveA, _speed);
-	analogWrite(_driveB, _speed);
-	digitalWrite(_motor1, HIGH);
-	digitalWrite(_motor2, LOW);
-	digitalWrite(_motor3, LOW);
-	digitalWrite(_motor4, HIGH);
+	String msg = "";
+	
+	if(_isConfigured){
+		if(_speed > 0){
+			analogWrite(_driveA, _speed);
+			analogWrite(_driveB, _speed);
+			digitalWrite(_motor1, HIGH);
+			digitalWrite(_motor2, LOW);
+			digitalWrite(_motor3, LOW);
+			digitalWrite(_motor4, HIGH);
+			
+			msg = "Moving Forward";
+		}else {
+			msg = SPEED_MSG;
+		}	
+	} else{
+		msg = CONFIG_MSG;
+	}
 
-	if (_debug) {
-		Serial.println("Forward");
-	}	
+	if (_debug){
+		Serial.println(msg);
+	}		
 }
 
-void Maneuver::Reverse() {
-	analogWrite(_driveA, _speed);
-	analogWrite(_driveB, _speed);
-	digitalWrite(_motor1, LOW);
-	digitalWrite(_motor2, HIGH);
-	digitalWrite(_motor3, HIGH);
-	digitalWrite(_motor4, LOW);
+void Maneuver::Backward() {
+	String msg = "";
+	
+	if(_isConfigured) {
+		if(_speed > 0){
+			analogWrite(_driveA, _speed);
+			analogWrite(_driveB, _speed);
+			digitalWrite(_motor1, LOW);
+			digitalWrite(_motor2, HIGH);
+			digitalWrite(_motor3, HIGH);
+			digitalWrite(_motor4, LOW);	
+			
+			msg = "Moving Backward";
+		}else {
+			msg = SPEED_MSG;
+		}		
+	}else {
+		msg = CONFIG_MSG;
+	}
 
 	if (_debug) {
-		Serial.println("Back");
+		Serial.println(msg);
 	}	
 }
 
 void Maneuver::Left() {
-	analogWrite(_driveA, _speed);
-	analogWrite(_driveB, _speed);
-	digitalWrite(_motor1, LOW);
-	digitalWrite(_motor2, HIGH);
-	digitalWrite(_motor3, LOW);
-	digitalWrite(_motor4, HIGH);
+	String msg = "";
+	
+	if(_isConfigured) {
+		if(_speed > 0){
+			analogWrite(_driveA, _speed);
+			analogWrite(_driveB, _speed);
+			digitalWrite(_motor1, LOW);
+			digitalWrite(_motor2, HIGH);
+			digitalWrite(_motor3, LOW);
+			digitalWrite(_motor4, HIGH);
+			
+			msg = "Moving Left";
+		}else{
+			msg = SPEED_MSG;
+		}
+	} else {
+		msg = CONFIG_MSG;
+	}		
 
 	if (_debug) {
-		Serial.println("Left");
+		Serial.println(msg);
 	}	
 }
 
 void Maneuver::Right() {
-	analogWrite(_driveA, _speed);
-	analogWrite(_driveB, _speed);
-	digitalWrite(_motor1, HIGH);
-	digitalWrite(_motor2, LOW);
-	digitalWrite(_motor3, HIGH);
-	digitalWrite(_motor4, LOW);
-
+	String msg = "";
+	
+	if(_isConfigured) {
+		if(_speed > 0) {
+			analogWrite(_driveA, _speed);
+			analogWrite(_driveB, _speed);
+			digitalWrite(_motor1, HIGH);
+			digitalWrite(_motor2, LOW);
+			digitalWrite(_motor3, HIGH);
+			digitalWrite(_motor4, LOW);	
+			
+			msg = "Moving Right";
+		} else {
+			msg = SPEED_MSG;
+		}
+	}else {
+		msg = CONFIG_MSG;
+	}
+	
 	if (_debug) {
-		Serial.println("Right");
-	}	
+		Serial.println(msg);
+	}
 }
 
 void Maneuver::Stop() {
-	digitalWrite(_driveA, LOW);
-	digitalWrite(_driveB, LOW);
+	String msg = "";
+	
+	if(_isConfigured){
+		digitalWrite(_driveA, LOW);
+		digitalWrite(_driveB, LOW);
+		
+		msg = "Stop!";
+	}else {
+		msg = CONFIG_MSG;
+	}
 
 	if (_debug) {
-		Serial.println("Stop!");
+		Serial.println(msg);
 	}	
 }
 
@@ -110,13 +182,22 @@ void Maneuver::Turn(char direction, int radius) {
 }
 
 int Maneuver::Distance(Sensor sensor) {
-  digitalWrite(sensor.Trig, LOW);   
-  delayMicroseconds(2);
-  digitalWrite(sensor.Trig, HIGH);  
-  delayMicroseconds(20);
-  digitalWrite(sensor.Trig, LOW);   
-  float Fdistance = pulseIn(sensor.Echo, HIGH);  
-  Fdistance = Fdistance / 58;
-  
-  return (int)Fdistance;
+	if(_isConfigured){
+		digitalWrite(sensor.Trig, LOW);   
+		delayMicroseconds(2);
+		digitalWrite(sensor.Trig, HIGH);  
+		delayMicroseconds(20);
+		digitalWrite(sensor.Trig, LOW);   
+		float Fdistance = pulseIn(sensor.Echo, HIGH);  
+		Fdistance = Fdistance / 58;
+		
+		return (int)Fdistance;
+	} else {
+		
+		if (_debug) {
+			Serial.println(CONFIG_MSG);
+		}
+		
+		return 0;
+	}
 } 
