@@ -23,6 +23,13 @@ struct Settings {
 	bool Debug;
 };
 
+struct Distance {
+	int Left;
+	int Right;
+	int Forward;
+	int Backward;
+};
+
 class Maneuver {
 public:
 	Maneuver();
@@ -35,7 +42,9 @@ public:
 	void Right();
 	void Stop();
 	void Turn(char direction, int radius);
-	int Distance(Sensor sensor);
+	int GetDistance(Sensor sensor);
+	void Scan(Sensor sensor);
+	void SetDirection(Sensor sensor, Distance distance);
 
 private:
 	int _driveA;

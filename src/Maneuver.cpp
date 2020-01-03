@@ -181,7 +181,7 @@ void Maneuver::Turn(char direction, int radius) {
 	Stop();
 }
 
-int Maneuver::Distance(Sensor sensor) {
+int Maneuver::GetDistance(Sensor sensor) {
 	if(_isConfigured){
 		digitalWrite(sensor.Trig, LOW);   
 		delayMicroseconds(2);
@@ -200,4 +200,40 @@ int Maneuver::Distance(Sensor sensor) {
 		
 		return 0;
 	}
+}
+
+void Maneuver::Scan(Sensor sensor){
+	Distance distance;
+
+	delay(500);
+
+	Turn('L',90);
+	distance.Left = GetDistance(sensor);  
+	delay(500);
+
+	Turn('R',180);
+	distance.Right = GetDistance(sensor);
+	delay(500);
+
+	Turn('L',90);
+	distance.Forward = GetDistance(sensor);
+	delay(500);
+
+	SetDirection(sensor, distance);
 } 
+
+void Maneuver::SetDirection(Sensor sensor, Distance distance){
+	if((distance.Right <= 50) && (distance.Left <= 50) && (distance.Forward <= 50)){
+		Backward();
+		Scan(sensor);
+	}else if((distance.Left >= 50) && (distance.Left > distance.Right)){
+		Turn('L',90);
+	}else if ((distance.Right >= 50) && (distance.Right > distance.Left)){
+		Turn('R', 90);
+	}else if((distance.Forward >= 50) && ((distance.Forward > distance.Left) && (distance.Forward > distance.Right))) {
+		Forward();
+	}else {
+		// write a function to randomly determine a direction here
+		Turn('L',90);
+	}
+}
