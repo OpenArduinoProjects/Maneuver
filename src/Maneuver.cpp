@@ -173,8 +173,8 @@ void Maneuver::Turn(char direction, int radius) {
 
 	switch (radius) 
 	{
-		case 90: delay(400); break;
-		case 180: delay(800); break;
+		case 90: delay(300); break;
+		case 180: delay(600); break;
 		case 360: delay(1600); break;
 	}
 
