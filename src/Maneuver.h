@@ -8,6 +8,8 @@
 #ifndef _Maneuver_h
 #define _Maneuver_h
 
+#include <Arduino.h>
+
 struct Sensor {
   int Echo;
   int Trig;
@@ -47,15 +49,7 @@ public:
 	void SetDirection(Sensor sensor, Distance distance);
 
 private:
-	int _driveA;
-	int _driveB;
-	int _motor1;
-	int _motor2;
-	int _motor3;
-	int _motor4;
-	int _speed;
-	bool _debug;
-	bool _isConfigured = false;
+	void printMsg(String msg);	
 };
 
 #endif

@@ -5,13 +5,20 @@
  Editor:	Notepad++, Arduino IDE
 */
 
-#include "Maneuver.h"
-#include "Arduino.h"
+#include <Maneuver.h>
+#include <Arduino.h>
+#include <LiquidCrystal.h>
+
+LiquidCrystal lcd(7, 8, 9, 10, 11, 12);
 
 String SPEED_MSG = "Speed not set";
 String CONFIG_MSG = "PIN Configuration not set.";
 
-Maneuver::Maneuver() {
+int _driveA, _driveB, _motor1, _motor2, _motor3, _motor4, _speed;
+bool _debug = false;
+bool _isConfigured = false;
+
+Maneuver::Maneuver() {	
 }
 
 Maneuver::Maneuver(int speed){
@@ -43,7 +50,7 @@ void Maneuver::SetSpeed(int speed){
 	if(speed > 0){
 		_speed = speed;	
 	}else{
-		Serial.println("Speed not set");
+		printMsg("Speed not set");
 	}
 }
 
@@ -68,7 +75,7 @@ void Maneuver::Forward() {
 	}
 
 	if (_debug){
-		Serial.println(msg);
+		printMsg(msg);
 	}		
 }
 
@@ -93,7 +100,7 @@ void Maneuver::Backward() {
 	}
 
 	if (_debug) {
-		Serial.println(msg);
+		printMsg(msg);
 	}	
 }
 
@@ -118,7 +125,7 @@ void Maneuver::Left() {
 	}		
 
 	if (_debug) {
-		Serial.println(msg);
+		printMsg(msg);
 	}	
 }
 
@@ -143,7 +150,7 @@ void Maneuver::Right() {
 	}
 	
 	if (_debug) {
-		Serial.println(msg);
+		printMsg(msg);
 	}
 }
 
@@ -160,7 +167,7 @@ void Maneuver::Stop() {
 	}
 
 	if (_debug) {
-		Serial.println(msg);
+		printMsg(msg);
 	}	
 }
 
@@ -195,6 +202,8 @@ int Maneuver::GetDistance(Sensor sensor) {
 	} else {
 		
 		if (_debug) {
+			//printMsg(CONFIG_MSG);
+			
 			Serial.println(CONFIG_MSG);
 		}
 		
@@ -236,4 +245,12 @@ void Maneuver::SetDirection(Sensor sensor, Distance distance){
 		// write a function to randomly determine a direction here
 		Turn('L',90);
 	}
+}
+
+void Maneuver::printMsg(String msg){
+	lcd.begin(16, 2);
+	lcd.home();
+	lcd.print(msg);
+	
+	Serial.println(msg);
 }
