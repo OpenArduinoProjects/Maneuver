@@ -9,7 +9,7 @@
 #include <Arduino.h>
 #include <LiquidCrystal.h>
 
-LiquidCrystal lcd(7, 8, 9, 10, 11, 12);
+LiquidCrystal lcd(13, 12, 10, 4, 3, 2);
 
 String SPEED_MSG = "Speed not set";
 String CONFIG_MSG = "PIN Configuration not set.";
