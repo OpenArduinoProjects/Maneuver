@@ -49,7 +49,8 @@ public:
 	void SetDirection(Sensor sensor, Distance distance);
 
 private:
-	void printMsg(String msg);	
+	void printMsg(String msg);
+	void printMsg(String msg, String pos);	
 };
 
 #endif

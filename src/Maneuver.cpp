@@ -11,10 +11,13 @@
 
 LiquidCrystal lcd(13, 12, 10, 4, 3, 2);
 
-String SPEED_MSG = "Speed not set";
-String CONFIG_MSG = "PIN Configuration not set.";
+const String SPEED_MSG = "Speed not set";
+const String CONFIG_MSG = "PIN Configuration not set.";
+const String DIST_MSG = "Distance: ";
+const String TOP = "top";
+const String BTM = "bottom";
 
-int _driveA, _driveB, _motor1, _motor2, _motor3, _motor4, _speed;
+int _driveA, _driveB, _motor1, _motor2, _motor3, _motor4, _speed, _turnSpeed;
 bool _debug = false;
 bool _isConfigured = false;
 
@@ -48,7 +51,8 @@ void Maneuver::Configure(Settings setting){
 
 void Maneuver::SetSpeed(int speed){
 	if(speed > 0){
-		_speed = speed;	
+		_speed = speed;
+		_turnSpeed = speed / 2;
 	}else{
 		printMsg("Speed not set");
 	}
@@ -61,6 +65,7 @@ void Maneuver::Forward() {
 		if(_speed > 0){
 			analogWrite(_driveA, _speed);
 			analogWrite(_driveB, _speed);
+			
 			digitalWrite(_motor1, HIGH);
 			digitalWrite(_motor2, LOW);
 			digitalWrite(_motor3, LOW);
@@ -74,9 +79,7 @@ void Maneuver::Forward() {
 		msg = CONFIG_MSG;
 	}
 
-	if (_debug){
-		printMsg(msg);
-	}		
+	printMsg(msg);		
 }
 
 void Maneuver::Backward() {
@@ -86,6 +89,7 @@ void Maneuver::Backward() {
 		if(_speed > 0){
 			analogWrite(_driveA, _speed);
 			analogWrite(_driveB, _speed);
+			
 			digitalWrite(_motor1, LOW);
 			digitalWrite(_motor2, HIGH);
 			digitalWrite(_motor3, HIGH);
@@ -99,18 +103,17 @@ void Maneuver::Backward() {
 		msg = CONFIG_MSG;
 	}
 
-	if (_debug) {
-		printMsg(msg);
-	}	
+	printMsg(msg);	
 }
 
 void Maneuver::Left() {
 	String msg = "";
 	
 	if(_isConfigured) {
-		if(_speed > 0){
+		if(_turnSpeed > 0){
 			analogWrite(_driveA, _speed);
 			analogWrite(_driveB, _speed);
+			
 			digitalWrite(_motor1, LOW);
 			digitalWrite(_motor2, HIGH);
 			digitalWrite(_motor3, LOW);
@@ -124,18 +127,17 @@ void Maneuver::Left() {
 		msg = CONFIG_MSG;
 	}		
 
-	if (_debug) {
-		printMsg(msg);
-	}	
+	printMsg(msg);	
 }
 
 void Maneuver::Right() {
 	String msg = "";
 	
 	if(_isConfigured) {
-		if(_speed > 0) {
+		if(_turnSpeed > 0) {
 			analogWrite(_driveA, _speed);
 			analogWrite(_driveB, _speed);
+
 			digitalWrite(_motor1, HIGH);
 			digitalWrite(_motor2, LOW);
 			digitalWrite(_motor3, HIGH);
@@ -149,9 +151,7 @@ void Maneuver::Right() {
 		msg = CONFIG_MSG;
 	}
 	
-	if (_debug) {
-		printMsg(msg);
-	}
+	printMsg(msg);
 }
 
 void Maneuver::Stop() {
@@ -166,9 +166,7 @@ void Maneuver::Stop() {
 		msg = CONFIG_MSG;
 	}
 
-	if (_debug) {
-		printMsg(msg);
-	}	
+	printMsg(msg);	
 }
 
 void Maneuver::Turn(char direction, int radius) {
@@ -192,20 +190,21 @@ int Maneuver::GetDistance(Sensor sensor) {
 	if(_isConfigured){
 		digitalWrite(sensor.Trig, LOW);   
 		delayMicroseconds(2);
+		
 		digitalWrite(sensor.Trig, HIGH);  
 		delayMicroseconds(20);
+		
 		digitalWrite(sensor.Trig, LOW);   
 		float Fdistance = pulseIn(sensor.Echo, HIGH);  
 		Fdistance = Fdistance / 58;
 		
+		//printMsg(DIST_MSG + (String)Fdistance, BTM);
+		
 		return (int)Fdistance;
 	} else {
 		
-		if (_debug) {
-			//printMsg(CONFIG_MSG);
-			
-			Serial.println(CONFIG_MSG);
-		}
+		printMsg(CONFIG_MSG);			
+		Serial.println(CONFIG_MSG);
 		
 		return 0;
 	}
@@ -213,19 +212,25 @@ int Maneuver::GetDistance(Sensor sensor) {
 
 void Maneuver::Scan(Sensor sensor){
 	Distance distance;
-
+	
 	delay(500);
 
 	Turn('L',90);
-	distance.Left = GetDistance(sensor);  
+	delay(500);
+	distance.Left = GetDistance(sensor);
+	printMsg(DIST_MSG + (String)distance.Left, BTM);	
 	delay(500);
 
 	Turn('R',180);
+	delay(500);
 	distance.Right = GetDistance(sensor);
+	printMsg(DIST_MSG + (String)distance.Right, BTM);
 	delay(500);
 
 	Turn('L',90);
+	delay(500);
 	distance.Forward = GetDistance(sensor);
+	printMsg(DIST_MSG + (String)distance.Forward, BTM);
 	delay(500);
 
 	SetDirection(sensor, distance);
@@ -248,9 +253,23 @@ void Maneuver::SetDirection(Sensor sensor, Distance distance){
 }
 
 void Maneuver::printMsg(String msg){
-	lcd.begin(16, 2);
-	lcd.home();
-	lcd.print(msg);
+	printMsg(msg, "");
+}
+
+void Maneuver::printMsg(String msg, String pos){
+	if (_debug){
+		lcd.begin(16, 2);
+
+		if(pos == TOP){
+			lcd.setCursor(0, 0);
+		}else if(pos == BTM) {
+			lcd.setCursor(0, 1);
+		}else{
+			lcd.home();
+		}	
+
+		lcd.print(msg);
 	
-	Serial.println(msg);
+		Serial.println(msg);		
+	}
 }
