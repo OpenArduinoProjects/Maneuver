@@ -8,8 +8,10 @@
 #include <Maneuver.h>
 #include <Arduino.h>
 #include <LiquidCrystal.h>
+#include "SR04.h"
 
 LiquidCrystal lcd(13, 12, 10, 4, 3, 2);
+SR04 sr04 = SR04(A4,A5);
 
 const String SPEED_MSG = "Speed not set";
 const String CONFIG_MSG = "PIN Configuration not set.";
@@ -18,8 +20,10 @@ const String TOP = "top";
 const String BTM = "bottom";
 
 int _driveA, _driveB, _motor1, _motor2, _motor3, _motor4, _speed, _turnSpeed;
+int _minimumDistance;
 bool _debug = false;
 bool _isConfigured = false;
+int duration, inches;
 
 Maneuver::Maneuver() {	
 }
@@ -29,6 +33,8 @@ Maneuver::Maneuver(int speed){
 }
 
 void Maneuver::Configure(Settings setting){
+	_minimumDistance = setting.MinimumDistance;
+	
 	_driveA = setting.DriveA;
 	_driveB = setting.DriveB;
 
@@ -47,6 +53,8 @@ void Maneuver::Configure(Settings setting){
 	pinMode(_driveB, OUTPUT);
 	
 	_isConfigured = true;
+	
+	lcd.begin(16, 2);
 }
 
 void Maneuver::SetSpeed(int speed){
@@ -119,7 +127,7 @@ void Maneuver::Left() {
 			digitalWrite(_motor3, LOW);
 			digitalWrite(_motor4, HIGH);
 			
-			msg = "Moving Left";
+			msg = "Scanning Left";
 		}else{
 			msg = SPEED_MSG;
 		}
@@ -143,7 +151,7 @@ void Maneuver::Right() {
 			digitalWrite(_motor3, HIGH);
 			digitalWrite(_motor4, LOW);	
 			
-			msg = "Moving Right";
+			msg = "Scanning Right";
 		} else {
 			msg = SPEED_MSG;
 		}
@@ -166,7 +174,7 @@ void Maneuver::Stop() {
 		msg = CONFIG_MSG;
 	}
 
-	printMsg(msg);	
+	//printMsg(msg);	
 }
 
 void Maneuver::Turn(char direction, int radius) {
@@ -187,34 +195,19 @@ void Maneuver::Turn(char direction, int radius) {
 }
 
 int Maneuver::GetDistance(Sensor sensor) {
-	if(_isConfigured){
-		digitalWrite(sensor.Trig, LOW);   
-		delayMicroseconds(2);
-		
-		digitalWrite(sensor.Trig, HIGH);  
-		delayMicroseconds(20);
-		
-		digitalWrite(sensor.Trig, LOW);   
-		float Fdistance = pulseIn(sensor.Echo, HIGH);  
-		Fdistance = Fdistance / 58;
-		
-		//printMsg(DIST_MSG + (String)Fdistance, BTM);
-		
-		return (int)Fdistance;
-	} else {
-		
-		printMsg(CONFIG_MSG);			
-		Serial.println(CONFIG_MSG);
-		
-		return 0;
-	}
+	int distance = (_isConfigured) ? sr04.Distance() : 0;
+	String message = (_isConfigured) ? DIST_MSG + (String)sr04.Distance(): CONFIG_MSG;
+	String position = (_isConfigured) ? BTM : TOP;
+	printMsg(message, position);
+	
+	return distance;
 }
 
 void Maneuver::Scan(Sensor sensor){
 	Distance distance;
-	
+	lcd.clear();
 	delay(500);
-
+	
 	Turn('L',90);
 	delay(500);
 	distance.Left = GetDistance(sensor);
@@ -237,29 +230,34 @@ void Maneuver::Scan(Sensor sensor){
 } 
 
 void Maneuver::SetDirection(Sensor sensor, Distance distance){
-	if((distance.Right <= 50) && (distance.Left <= 50) && (distance.Forward <= 50)){
+	if((distance.Right <= _minimumDistance) && (distance.Left <= _minimumDistance) && (distance.Forward <= _minimumDistance)){
 		Backward();
 		Scan(sensor);
-	}else if((distance.Left >= 50) && (distance.Left > distance.Right)){
+		printMsg("Rescanning...", TOP);		
+	}else if((distance.Left >= _minimumDistance) && (distance.Left > distance.Right)){
 		Turn('L',90);
-	}else if ((distance.Right >= 50) && (distance.Right > distance.Left)){
+		printMsg("Turning Left", TOP);
+	}else if ((distance.Right >= _minimumDistance) && (distance.Right > distance.Left)){
 		Turn('R', 90);
-	}else if((distance.Forward >= 50) && ((distance.Forward > distance.Left) && (distance.Forward > distance.Right))) {
+		printMsg("Turning Left", TOP);
+	}else if((distance.Forward >= _minimumDistance) && ((distance.Forward > distance.Left) && (distance.Forward > distance.Right))) {
 		Forward();
 	}else {
 		// write a function to randomly determine a direction here
 		Turn('L',90);
+		printMsg("Turning Left", TOP);
 	}
+	
+	delay(500);
 }
 
 void Maneuver::printMsg(String msg){
+	//lcd.clear();
 	printMsg(msg, "");
 }
 
 void Maneuver::printMsg(String msg, String pos){
 	if (_debug){
-		lcd.begin(16, 2);
-
 		if(pos == TOP){
 			lcd.setCursor(0, 0);
 		}else if(pos == BTM) {
@@ -272,4 +270,9 @@ void Maneuver::printMsg(String msg, String pos){
 	
 		Serial.println(msg);		
 	}
+}
+
+long Maneuver::MicrosecondsToInches(long microseconds) {
+  // See: http://www.parallax.com/dl/docs/prod/acc/28015-PING-v1.3.pdf
+  return microseconds / 74 / 2;
 }

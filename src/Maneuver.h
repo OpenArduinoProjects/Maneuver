@@ -23,6 +23,7 @@ struct Settings {
 	int Motor3;
 	int Motor4;
 	bool Debug;
+	int MinimumDistance;
 };
 
 struct Distance {
@@ -50,7 +51,8 @@ public:
 
 private:
 	void printMsg(String msg);
-	void printMsg(String msg, String pos);	
+	void printMsg(String msg, String pos);
+	long MicrosecondsToInches(long microseconds);
 };
 
 #endif
