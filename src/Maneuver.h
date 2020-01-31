@@ -24,6 +24,7 @@ struct Settings {
 	int Motor4;
 	bool Debug;
 	int MinimumDistance;
+	Sensor Sensor;
 };
 
 struct Distance {
@@ -45,9 +46,9 @@ public:
 	void Right();
 	void Stop();
 	void Turn(char direction, int radius);
-	int GetDistance(Sensor sensor);
-	void Scan(Sensor sensor);
-	void SetDirection(Sensor sensor, Distance distance);
+	int GetDistance();
+	void Scan();
+	void SetDirection(Distance distance);
 
 private:
 	void printMsg(String msg);

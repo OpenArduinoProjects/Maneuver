@@ -8,10 +8,10 @@
 #include <Maneuver.h>
 #include <Arduino.h>
 #include <LiquidCrystal.h>
-#include "SR04.h"
+#include <SR04.h>
 
 LiquidCrystal lcd(13, 12, 10, 4, 3, 2);
-SR04 sr04 = SR04(A4,A5);
+SR04 sensor = SR04(A4,A5);
 
 const String SPEED_MSG = "Speed not set";
 const String CONFIG_MSG = "PIN Configuration not set.";
@@ -194,45 +194,45 @@ void Maneuver::Turn(char direction, int radius) {
 	Stop();
 }
 
-int Maneuver::GetDistance(Sensor sensor) {
-	int distance = (_isConfigured) ? sr04.Distance() : 0;
-	String message = (_isConfigured) ? DIST_MSG + (String)sr04.Distance(): CONFIG_MSG;
+int Maneuver::GetDistance() {
+	int distance = (_isConfigured) ? sensor.Distance() : 0;
+	String message = (_isConfigured) ? DIST_MSG + (String)sensor.Distance(): CONFIG_MSG;
 	String position = (_isConfigured) ? BTM : TOP;
 	printMsg(message, position);
 	
 	return distance;
 }
 
-void Maneuver::Scan(Sensor sensor){
+void Maneuver::Scan(){
 	Distance distance;
 	lcd.clear();
 	delay(500);
 	
 	Turn('L',90);
 	delay(500);
-	distance.Left = GetDistance(sensor);
+	distance.Left = GetDistance();
 	printMsg(DIST_MSG + (String)distance.Left, BTM);	
 	delay(500);
 
 	Turn('R',180);
 	delay(500);
-	distance.Right = GetDistance(sensor);
+	distance.Right = GetDistance();
 	printMsg(DIST_MSG + (String)distance.Right, BTM);
 	delay(500);
 
 	Turn('L',90);
 	delay(500);
-	distance.Forward = GetDistance(sensor);
+	distance.Forward = GetDistance();
 	printMsg(DIST_MSG + (String)distance.Forward, BTM);
 	delay(500);
 
-	SetDirection(sensor, distance);
+	SetDirection(distance);
 } 
 
-void Maneuver::SetDirection(Sensor sensor, Distance distance){
+void Maneuver::SetDirection(Distance distance){
 	if((distance.Right <= _minimumDistance) && (distance.Left <= _minimumDistance) && (distance.Forward <= _minimumDistance)){
 		Backward();
-		Scan(sensor);
+		Scan();
 		printMsg("Rescanning...", TOP);		
 	}else if((distance.Left >= _minimumDistance) && (distance.Left > distance.Right)){
 		Turn('L',90);
@@ -252,7 +252,6 @@ void Maneuver::SetDirection(Sensor sensor, Distance distance){
 }
 
 void Maneuver::printMsg(String msg){
-	//lcd.clear();
 	printMsg(msg, "");
 }
 
