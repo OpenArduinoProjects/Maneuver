@@ -11,7 +11,6 @@
 #include <SR04.h>
 
 LiquidCrystal lcd(13, 12, 10, 4, 3, 2);
-SR04 sensor = SR04(A4,A5);
 
 const String SPEED_MSG = "Speed not set";
 const String CONFIG_MSG = "PIN Configuration not set.";
@@ -19,11 +18,11 @@ const String DIST_MSG = "Distance: ";
 const String TOP = "top";
 const String BTM = "bottom";
 
+int _trigPin, _echoPin, _minimumDistance;
 int _driveA, _driveB, _motor1, _motor2, _motor3, _motor4, _speed, _turnSpeed;
-int _minimumDistance;
+
 bool _debug = false;
 bool _isConfigured = false;
-int duration, inches;
 
 Maneuver::Maneuver() {	
 }
@@ -33,6 +32,12 @@ Maneuver::Maneuver(int speed){
 }
 
 void Maneuver::Configure(Settings setting){
+	_trigPin = setting.Sensor.Trig;
+	_echoPin = setting.Sensor.Echo;
+	
+	pinMode(_trigPin, OUTPUT); 
+	pinMode(_echoPin, INPUT);
+ 
 	_minimumDistance = setting.MinimumDistance;
 	
 	_driveA = setting.DriveA;
@@ -195,12 +200,15 @@ void Maneuver::Turn(char direction, int radius) {
 }
 
 int Maneuver::GetDistance() {
-	int distance = (_isConfigured) ? sensor.Distance() : 0;
-	String message = (_isConfigured) ? DIST_MSG + (String)sensor.Distance(): CONFIG_MSG;
-	String position = (_isConfigured) ? BTM : TOP;
-	printMsg(message, position);
+	digitalWrite(_trigPin, LOW); 
+	delayMicroseconds(2); 
+	digitalWrite(_trigPin, HIGH); 
+	delayMicroseconds(10); 
+	digitalWrite(_trigPin, LOW);
+ 
+	float duration = pulseIn(_echoPin, HIGH);
 	
-	return distance;
+	return MicrosecondsToInches(duration);
 }
 
 void Maneuver::Scan(){
@@ -229,25 +237,41 @@ void Maneuver::Scan(){
 	SetDirection(distance);
 } 
 
-void Maneuver::SetDirection(Distance distance){
-	if((distance.Right <= _minimumDistance) && (distance.Left <= _minimumDistance) && (distance.Forward <= _minimumDistance)){
-		Backward();
-		Scan();
-		printMsg("Rescanning...", TOP);		
-	}else if((distance.Left >= _minimumDistance) && (distance.Left > distance.Right)){
-		Turn('L',90);
-		printMsg("Turning Left", TOP);
-	}else if ((distance.Right >= _minimumDistance) && (distance.Right > distance.Left)){
-		Turn('R', 90);
-		printMsg("Turning Left", TOP);
-	}else if((distance.Forward >= _minimumDistance) && ((distance.Forward > distance.Left) && (distance.Forward > distance.Right))) {
-		Forward();
-	}else {
-		// write a function to randomly determine a direction here
-		Turn('L',90);
-		printMsg("Turning Left", TOP);
+int getGreatestDistance(Distance distance){
+	int distances[3] = {distance.Left, distance.Right, distance.Forward};
+	
+	// get largest distance value
+	for(int x = 0; x < sizeof(distances); x++){
+		if(distances[0] < distances[x])
+           distances[0] = distances[x];
 	}
 	
+	return distances[0];
+}
+
+void Maneuver::SetDirection(Distance distance){	
+	String msg = "";
+	int greatestDistance = getGreatestDistance(distance);
+
+	if(greatestDistance > _minimumDistance){
+		if(greatestDistance == distance.Left){
+			Turn('L', 90);
+			msg = "Turning Left";
+		}else if (greatestDistance == distance.Right){
+			Turn('R', 90);
+			msg = "Turning Right";
+		}else if (greatestDistance == distance.Forward){
+			Forward();
+		}else {
+			SetDirection(distance);
+		}
+	}else {
+		Backward();
+		msg = "Rescanning...";
+		Scan();		
+	}
+
+	printMsg(msg, TOP);
 	delay(500);
 }
 
